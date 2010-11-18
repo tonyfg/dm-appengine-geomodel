@@ -1,0 +1,36 @@
+Implementation of the geomodel library for dm-appengine.
+
+This is still a pretty early sketch, not even suited for testing... If you really want to try it:
+
+require 'geomodel'
+
+class Thing
+  include GeoModel #Includes the geomodel stuff onto your model
+  property :stuff, String
+end
+
+# Lets create a new entity with a defined location
+example = Thing.new
+example.location = AppEngine::Datastore::GeoPt.new(12.3, 45.9)
+example.save
+
+#Lets define 2 points for a bounding box
+southwest = AppEngine::Datastore::GeoPt.new(10, 45)
+northeast = AppEngine::Datastore::GeoPt.new(11, 46)
+
+#Now we can do bounding box queries like this:
+Thing.within(southwest, northeast)
+
+
+#TODO:
+#When I have the time, this will be setup as datamapper is-geomodel plugin.
+#It will be possible to query in a more natural way, like this:
+#
+#Thing.all(:location.gt => southwest, :location.lt => northeast)
+#
+#where southwest and northeast are AppEngine::Datastore::GeoPt instances, or
+#
+#Thing.all(:location.gt => "10.23,45.01", :location.lt => "11.03,46.34")
+#
+#where "10.23,45.01" is a string in the format "lat,lng".
+#(useful for when you receive the bounding box as an URL parameter ;))
