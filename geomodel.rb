@@ -46,10 +46,14 @@ module GeoModel
   #Add location properties to data model
   def self.included cls
     cls.extend(ClassMethods)
-    cls.property :location, GeoPt, :required => true
     cls.property :geocells, DataMapper::Property::List
     cls.before :save do |thing|
-      thing.update_geocells
+      unless thing.location.nil?
+        if thing.location.is_a? String
+          thing.location = geoPtFromString(thing.location)
+        end
+        update_geocells
+      end
     end
   end
 

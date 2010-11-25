@@ -7,6 +7,7 @@ require 'geomodel'
 class Thing
   include GeoModel #Includes the geomodel stuff onto your model
   property :stuff, String
+  property :location, GeoPt #You have to define this for GeoModel to work.
 end
 
 # Lets create a new entity with a defined location
