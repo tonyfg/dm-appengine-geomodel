@@ -5,10 +5,15 @@ This is still a pretty early sketch, not even suited for testing... If you reall
 require 'geomodel'
 
 class Thing
-  include GeoModel #Includes the geomodel stuff onto your model
+  include DataMapper::Resource #Or include DataMapper::AppEngineResource
+  is :geomodel
+
   property :stuff, String
-  property :location, GeoPt #You have to define this for GeoModel to work.
-end
+  property :location, GeoPt #You have to define a location property for
+                            #GeoModel to work. This way you have a choice
+end                         #to define it as required or optional.
+
+
 
 # Lets create a new entity with a defined location
 example = Thing.new
@@ -24,8 +29,7 @@ Thing.within(southwest, northeast)
 
 
 #TODO:
-#When I have the time, this will be setup as datamapper is-geomodel plugin.
-#It will be possible to query in a more natural way, like this:
+#In the future it will be possible to query in a more natural way, like this:
 #
 #Thing.all(:location.gt => southwest, :location.lt => northeast)
 #
@@ -35,3 +39,8 @@ Thing.within(southwest, northeast)
 #
 #where "10.23,45.01" is a string in the format "lat,lng".
 #(useful for when you receive the bounding box as an URL parameter ;))
+
+
+#CAVEATS:
+#Currently, when you do a bounding box query, you can get a few results
+#that are outside the bounding box. (Because they belong in the same geocell).
