@@ -25,22 +25,18 @@ southwest = AppEngine::Datastore::GeoPt.new(10, 45)
 northeast = AppEngine::Datastore::GeoPt.new(11, 46)
 
 #Now we can do bounding box queries like this:
-Thing.within(southwest, northeast)
+
+Thing.all(:location.gt => southwest, :location.lt => northeast)
+
+#or like this:
+
+Thing.all(:location.gt => "10.23,45.01", :location.lt => "11.03,46.34")
+
+#in this case, we give the points as a string of format "lat,lng".
+
+
 
 
 #TODO:
-#In the future it will be possible to query in a more natural way, like this:
-#
-#Thing.all(:location.gt => southwest, :location.lt => northeast)
-#
-#where southwest and northeast are AppEngine::Datastore::GeoPt instances, or
-#
-#Thing.all(:location.gt => "10.23,45.01", :location.lt => "11.03,46.34")
-#
-#where "10.23,45.01" is a string in the format "lat,lng".
-#(useful for when you receive the bounding box as an URL parameter ;))
-
-
-#CAVEATS:
-#Currently, when you do a bounding box query, you can get a few results
-#that are outside the bounding box. (Because they belong in the same geocell).
+#Cut a gem.
+#Document code and write a decent README / tutorial.

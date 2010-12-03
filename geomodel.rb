@@ -27,7 +27,9 @@ module DataMapper
       GeoPt = AppEngine::Datastore::GeoPt
 
       #Alphabet length must always be GridSize**2
+      #Also, GridSize should have an Integer square root.
       GridSize = 4
+      GridSizeSqrt = Math.sqrt GridSize
       Alphabet = '0123456789abcdef'
 
       #At 13 characters resolution, the cell can be considered a
@@ -48,6 +50,7 @@ module DataMapper
       South = -90.0
       East = 180.0
       West = -180.0
+      ZeroPt = GeoPt.new(0,0)
 
       #Add location properties to data model
       def is_geomodel
@@ -55,6 +58,7 @@ module DataMapper
         include InstanceMethods
 
         property :geocells, DataMapper::Property::List
+
         before :save do |thing|
           unless thing.location.nil?
             if thing.location.is_a? String
@@ -66,13 +70,45 @@ module DataMapper
       end
 
       module ClassMethods
+        def self.extended(object)
+          class << object
+            alias_method :pre_geomodel_all, :all unless method_defined?(:pre_geomodel_all)
+            alias_method :all, :geomodel_all
+          end
+        end
+
         #Does a bounding box datastore query, returns a Datamapper::Collection
-        def within(sw, ne)
+        def geomodel_all(query = Undefined)
+          if query.equal?(Undefined) || (query.kind_of?(Hash) && query.empty?)
+            return self.pre_geomodel_all(query)
+          end
+
+          #Calculate best resolution and get the necessary cells to query
+          sw = query[:location.gt] || query[:location.gte] || ZeroPt
+          ne = query[:location.lt] || query[:location.lte] || ZeroPt
+          sw = Geomodel.geoPtFromString(sw) if sw.is_a? String
+          sw = Geomodel.geoPtFromString(ne) if ne.is_a? String
           res = Geomodel.best_query_res(sw, ne)
           sw_cell = Geomodel.compute(sw)[0...res]
           ne_cell = Geomodel.compute(ne)[0...res]
           cells = Geomodel.query_cells(sw_cell, ne_cell)
-          self.all(:geocells => cells)
+
+          #Fix the query for datamapper
+          query.delete(:location.lt)
+          query.delete(:location.lte)
+          query.delete(:location.gt)
+          query.delete(:location.gte)
+          query[:geocells] = cells
+          result = self.pre_geomodel_all(query)
+
+          #Cull extraneous results
+          culled = result.select { |i|
+            i if sw.latitude <= i.location.latitude &&
+            ne.latitude >= i.location.latitude &&
+            sw.longitude <= i.location.longitude &&
+            ne.longitude >= i.location.longitude
+          }
+          new_collection(Query.new(result.repository, self, query), culled)
         end
       end
 
